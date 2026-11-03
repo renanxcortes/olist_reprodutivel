@@ -1,0 +1,7 @@
+# O .gitignore da raiz ignora *.Rproj, mas este arquivo precisa ir junto com a pasta
+!olist_reprodutivel.Rproj
+
+# Gerados localmente
+biblioteca/
+ferramentas/
+instaladores/

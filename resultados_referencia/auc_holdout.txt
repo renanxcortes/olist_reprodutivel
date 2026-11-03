@@ -1,0 +1,2 @@
+AUC Regressao Logistica (holdout): 0.6011
+AUC Lider H2O (holdout): 0.6237
