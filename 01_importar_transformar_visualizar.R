@@ -12,14 +12,14 @@ source('util/funcoes_plot.R')
 
 # Link com a explicação da base: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
-# No sistema da Olist cada pedido é designado a um unique customerid. 
-# Isso significa que cada consumidor terá diferentes ids para diferentes pedidos. 
-# O propósito de ter um customerunique_id na base é permitir identificar consumidores que fizeram recompras na loja. 
+# No sistema da Olist cada pedido é designado a um unique customer_id.
+# Isso significa que cada consumidor terá diferentes ids para diferentes pedidos.
+# Por outro lado, o customer_unique_id é único por cliente (como se fosse um "CPF")
+# O propósito de ter um customer_unique_id na base é permitir identificar consumidores que fizeram recompras na loja.
 # Caso contrário, você encontraria que cada ordem sempre tivesse diferentes consumidores associados.
 
-# customer_unique_id é único por pessoa (como se fosse um "CPF")
 # n_distinct(clientes$customer_id) == n_distinct(orders$order_id)
-# Tanto o "customer_id" quanto o "order_id" são únicos por compra
+# Como a igualdade acima é TRUE, tanto o "customer_id" quanto o "order_id" são únicos por compra
 
 # Import (local: o read_csv lê direto os arquivos .zip) ----
 clientes <- read_csv('data/customers_dataset.zip')
@@ -37,12 +37,14 @@ order_items <- read_csv('data/order_items_dataset.zip')
 # pegue isso então faça isso, então faça essa outra coisa
 # pegue isso %>% faça isso %>% faça essa outra coisa
 
+# Obs.: Uma versão alternativa mais moderna poderia usar |> ao invés de %>%
+
 # Juntando Dados ("Tidying") ----
 base_completa <- clientes %>% 
   left_join(orders) %>% 
   left_join(order_items) %>% # Uma ordem pode ter muito itens (por isso a base expande aqui)
-  left_join(reviews) %>% 
-  left_join(pagamentos) %>% 
+  left_join(reviews) %>% # Como o review é por pedido (e não por item) a base duplica alguns valores de reviews aqui também (pois é possível que um pedido tenha mais de um item)
+  left_join(pagamentos) %>% # É possível pagamentos parcelados (invetigar o order_id "fa65dad1b0e818e3ccc5cb0e39231352" por exemplo), então a base se expande aqui também
   left_join(produtos) %>%
   left_join(vendedores) %>% 
   left_join(categorias)
@@ -52,9 +54,18 @@ skim(base_completa)
 
 # Lembrando que a análise por item expande a base, mas a maioria dos pedidos é de um item somente.
 
-order_items %>% 
-  count(order_item_id) %>% # Número de itens do mesmo pedido
-  mutate(prop = n / sum(n)) # 87% dos pedidos tem só um item
+# Deprecated
+# order_items %>%
+#   count(order_item_id) %>% # Número de itens do mesmo pedido
+#   mutate(prop = n / sum(n)) # 87% dos pedidos tem só um item
+
+# Com dplyr, agrupe por order_id e conte os pedidos com exatamente um item:
+order_items |>
+  group_by(order_id) |>
+  summarise(n_itens = n_distinct(order_item_id)) |>
+  filter(n_itens == 1) |>
+  nrow()
+
 
 # IMPORTANTE: existem duplicidades: 
 # reviews %>% janitor::get_dupes(order_id)
@@ -64,8 +75,19 @@ order_items %>%
 # Além disso, a base de geolocalização (fora desta versão, por ser a maior e não acrescentar colunas à análise) tem instabilidade com relação aos distintos. Por exemplo, zip_code_prefix 01046, possui dois valores de latitude
 
 # Para simplificar, vamos limitar nossa análise somente para pedidos com um item
-base_completa <- base_completa %>% 
-  filter(order_item_id == 1)
+# Deprecated
+# base_completa <- base_completa %>%
+#   filter(order_item_id == 1)
+
+orders_ids_com_somente_um_pedido <- order_items |>
+  group_by(order_id) |>
+  summarise(n_itens = n_distinct(order_item_id)) |>
+  filter(n_itens == 1) |>
+  select(order_id)
+
+# Agora sim, vamos limitar nossa análise somente para pedidos com um item
+base_completa <- base_completa %>%
+  inner_join(orders_ids_com_somente_um_pedido)
 
 # Verifica qtd. de linhas e colunas e estrutura das colunas
 glimpse(base_completa)
@@ -76,7 +98,7 @@ View(base_completa) # Visualiza base similarmente a uma planilha excel
 # Transform ----
 
 # Nesta etapa, após a análise inicial da estrutura dos dados, criamos variáveis que serão úteis na análise.
-# Criação de uma variável de review_alto: "1" se score do review for 5, e "0" caso contrário. Não existem valores faltantes nessa variável sum(is.na(base_completa$review_score)) 
+# Criação de uma variável de review_alto: "1" se score do review for 5, e "0" caso contrário. Não existem valores faltantes nessa variável sum(is.na(base_completa$review_score)) resulta em 0.
 # Criação de uma variável de diferença entrega prazo de entrega dado para o cliente e data de entrega propriamente dita.
 # Criação de uma variável que relaciona valores de Frete e Preço.
 # Criação de uma variável de frete gratuito
@@ -425,7 +447,7 @@ base_analise %>%
   geom_boxplot() +
   theme(legend.title = element_blank(),
         axis.text.x = element_text(angle = 45))
-# Boxplot pode não refletir a distribuição dos dados
+# Boxplot pode não refletir a distribuição dos dados (pois esconde multimodalidades. Isto é, múltiplos "picos".)
 
 
 # ---- Fim do Interlúdio ---- #
@@ -518,7 +540,8 @@ base_model <- base_analise %>%
          log_frete_sobre_preco_desloc = log(frete_sobre_preco_desloc),
          product_category_name_cat = fct_lump(product_category_name, 7)
          ) %>% 
-  replace_na(list(product_photos_qty = 0)) %>% 
+  replace_na(list(product_photos_qty = 0)) %>%
+  # Seleciona somente um conjunto parcimonioso de covariáveis que possa fazer sentido
   select(customer_state,
          log_price,
          log_frete_sobre_preco_desloc,
@@ -534,11 +557,15 @@ map_df(base_model, ~sum(is.na(.))) %>%
   gather() %>% 
   arrange(desc(value))
 
-# Criamos uma classe explícita de NA para produto e imputamos NA no tipo de pagamento pela categoria mais provável
+# Deprecated pois "imputamos NA no tipo de pagamento pela categoria mais provável" pode representar um data leakage para modelagem
+# # Criamos uma classe explícita de NA para produto e imputamos NA no tipo de pagamento pela categoria mais provável
+#
+# base_model <- base_model %>%
+#   mutate(product_category_name_cat = fct_na_value_to_level(product_category_name_cat, level = '(Missing)')) %>%
+#   replace_na(list(payment_type = 'credit_card'))
 
-base_model <- base_model %>% 
-  mutate(product_category_name_cat = fct_na_value_to_level(product_category_name_cat, level = '(Missing)')) %>% 
-  replace_na(list(payment_type = 'credit_card'))
-  
+# Criamos uma classe explícita de NA para produto
+base_model <- base_model %>%
+  mutate(product_category_name_cat = fct_na_value_to_level(product_category_name_cat, level = '(Missing)'))
 
 saveRDS(base_model, 'data/base_model.rds')

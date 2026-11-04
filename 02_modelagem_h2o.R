@@ -121,6 +121,10 @@ h2o.partialPlot(object = aml_leader,
                 data = df_frame_treino, 
                 cols = "dias_antecipacao_na_entrega")
 
+h2o.partialPlot(object = aml_leader,
+                data = df_frame_treino,
+                cols = "atrasou")
+
 h2o.partialPlot(object = aml_leader, 
                 data = df_frame_treino, 
                 cols = "log_frete_sobre_preco_desloc")
