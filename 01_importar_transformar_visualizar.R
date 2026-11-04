@@ -160,7 +160,8 @@ base_analise <- base_analise %>%
 
 # Antes, vale a pena olhar no Grammar of Graphics:
 # https://vita.had.co.nz/papers/layered-grammar.html
-# Importância da Visualização de Dados: anscombe_quartet.png e people_land_vote.gif
+# Referências sobre a Importância da Visualização de Dados:
+# https://pt.wikipedia.org/wiki/Quarteto_de_Anscombe
 
 
 # Algumas Análises Univariadas ----
