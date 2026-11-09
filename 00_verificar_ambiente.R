@@ -1,5 +1,7 @@
 # Verificação do ambiente ----
 
+options("download.file.method" = "wininet")
+
 # Abra o projeto pelo arquivo olist_reprodutivel.Rproj e rode este script inteiro
 # uma vez, antes da aula (Ctrl + Shift + Enter). Ele não precisa de administrador.
 # Ao final, deve aparecer: AMBIENTE PRONTO.
