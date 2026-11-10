@@ -379,6 +379,7 @@ base_analise %>%
                      flag_interesse = 'Nota Máxima',
                      ylim = NA)
 
+
 # Preço/Frete/Frete sobre Preço vs. Review
 
 # Preço
@@ -465,12 +466,28 @@ base_analise %>%
             min = min(dias_antecipacao_na_entrega, na.rm = T),
             max = max(dias_antecipacao_na_entrega, na.rm = T))
 
+# dias_antecipacao_na_entrega vs. Review
+base_analise %>% 
+  plota_tx_interesse(var_x = 'dias_antecipacao_na_entrega',
+                     var_y = 'review_alto',
+                     flag_interesse = 'Nota Máxima',
+                     ylim = NA)
+
+# Obs: converto pra numérico antes, pois ela é difftime e o gráfico não entende muito bem
+# Desse jeito o gráfico consegue "quebrar" a variável numérica em categorias que fazem mais sentido
+base_analise %>% 
+  mutate(dias_antecipacao_na_entrega = as.numeric(dias_antecipacao_na_entrega)) %>%
+  plota_tx_interesse(var_x = 'dias_antecipacao_na_entrega',
+                     var_y = 'review_alto',
+                     flag_interesse = 'Nota Máxima',
+                     ylim = NA)
+
+# Maneira alternativa: separando as densidades não-paramétricas
 base_analise %>% 
   ggplot(aes(x = dias_antecipacao_na_entrega, fill = as.factor(review_alto))) +
   geom_density(alpha = 0.5)
 
-# Analisando pela quantidade de dias não é tão clara a diferença,
-# mas analisando pela variável dicotômica "Atrasou", fica clara a relevância
+# Analisando pela variável dicotômica "Atrasou", fica clara a relevância
 
 base_analise %>% 
   mutate(atrasou = ifelse(atrasou == 1, 'Sim', 'Não')) %>% 
