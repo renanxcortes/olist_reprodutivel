@@ -61,7 +61,7 @@ ggplot(aux, aes(x = prob_predita, col = as.factor(group))) +
 # Algoritmo: Diversos com AutoML do H2O
 # Estratégia de Validação: K-Fold Cross_validation
 # Estratégia de Checagem de Qualidade: o mesmo Holdout Set de antes
-# Fonte: https://towardsdatascience.com/a-minimal-example-combining-h2os-automl-and-shapley-s-decomposition-in-r-ba4481282c3c
+# Fonte: https://medium.com/data-science/a-minimal-example-combining-h2os-automl-and-shapley-s-decomposition-in-r-ba4481282c3c
 
 # Necessário Java 64-bit (o 00_verificar_ambiente.R prepara o Java se preciso)
 # Threads e memória fixos para todas as máquinas se comportarem de forma parecida
