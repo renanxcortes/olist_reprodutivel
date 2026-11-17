@@ -85,7 +85,8 @@ automl_model <- h2o.automl(
   balance_classes = TRUE,
   training_frame = df_frame_treino,
   nfolds = 4,
-  max_models = 3, # Número de modelos em vez de tempo: com tempo, máquinas lentas treinariam menos modelos
+  max_models = 10, # Número de modelos em vez de tempo: com tempo, máquinas lentas treinariam menos modelos
+  # max_runtime_secs = 10*60, # Opção alternativa: tempo de espera
   # StackedEnsemble: Importância Global de Modelos Stacked não são triviais
   # DeepLearning: não é reprodutível por padrão
   # XGBoost: não está disponível em todas as máquinas, o que mudaria os modelos comparados
